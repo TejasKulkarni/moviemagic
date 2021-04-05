@@ -1,0 +1,36 @@
+import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom';
+import { getMovieDetailsById } from '../../service/MovieListService';
+
+function useMovieDetails() {
+    const [movieDetail, setMovieDetail] = useState([]);
+    const [error, setError] = useState();
+    const [isLoading, setIsLoading] = useState();
+
+    const { id } = useParams();
+
+    useEffect(() => {
+        setIsLoading(true);
+        if (id !== null || id !== "0") {
+            getMovieDetailsById(id, (res) => {
+                if (res.data !== null && res.data !== "") {
+                    const movieDetailsData = res.data;
+                    setMovieDetail(movieDetailsData);
+                    setError(null);
+                }
+                setIsLoading(false);
+            }, (err) => {
+                if (err.response !== null && err.response.data !== null) {
+                    setError(`Error Code: ${err.response.data.ErrorGuid} - Message: ${err.response.data.ErrorMessage}`);
+                }
+                setIsLoading(false);
+            })
+        }
+    }, [])
+
+    return {
+        movieDetail, error, isLoading
+    }
+}
+
+export default useMovieDetails;
