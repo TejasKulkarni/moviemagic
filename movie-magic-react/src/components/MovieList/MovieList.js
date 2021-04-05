@@ -1,20 +1,21 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
+
+import Error from '../Error/Error';
 import Card from '../controls/Card';
 import Spinner from '../controls/Spinner';
 import useMovieList from './MovieListHook'
 
 const MovieList = () => {
 
-    const { movieList, isLoading } = useMovieList();
+    const { movieList, isLoading, error } = useMovieList();
 
     return (
         <>
+            {isLoading && <Spinner />}
+            {error && <Error errorMessage={error} />}
             {
-                isLoading && <Spinner />
-            }
-            {
-                !isLoading && movieList != null && 
+                !isLoading && !error && movieList != null && 
                 <div className="wrapper">
                     <div className="cards_wrap">
                         {
