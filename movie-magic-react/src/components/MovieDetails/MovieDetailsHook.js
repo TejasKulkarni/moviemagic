@@ -20,8 +20,11 @@ function useMovieDetails() {
                 }
                 setIsLoading(false);
             }, (err) => {
-                if (err.response !== null && err.response.data !== null) {
+                if (err.response !== undefined &&
+                    err.response !== null && err.response.data !== null && err.response.data !== undefined) {
                     setError(`Error Code: ${err.response.data.ErrorGuid} - Message: ${err.response.data.ErrorMessage}`);
+                } else {
+                    setError(`Unable to retrieve data.`)
                 }
                 setIsLoading(false);
             })
