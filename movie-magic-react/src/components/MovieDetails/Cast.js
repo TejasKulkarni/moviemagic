@@ -1,7 +1,9 @@
 import React from 'react'
 import { splitStringIntoArray } from '../../helpers/stringHelper'
 
-const Cast = ({actors}) => {
+const Cast = ({ movieDetails }) => {
+
+    const { actors } = movieDetails;
 
     const actorsArray = splitStringIntoArray(actors);
 

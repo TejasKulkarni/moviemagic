@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using MovieMagic.DTO;
 using Newtonsoft.Json;
 using Serilog;
+using System.Linq;
+using MovieMagic.Common.Enums;
+using MovieMagic.Common.Constants;
 
 namespace MovieMagic.Service
 {
@@ -20,31 +23,101 @@ namespace MovieMagic.Service
             _httpClient = client;
         }
 
-        public async Task<MovieCollection> GetAllMovies()
+        public async Task<MovieCollectionModel> GetAllMovies()
         {
-            var url = $"api/filmworld/movies";
+            var firstSourceTask = RetryLogic<MovieCollection>(Constants.FilmWorldAllMoviesUrl);
+            var secondSourceTask = RetryLogic<MovieCollection>(Constants.CinemaWorldAllMoviesUrl);
 
-            var result = await RetryLogic<MovieCollection>(url);
+            await Task.WhenAll(firstSourceTask, secondSourceTask);
 
-            if (result != null)
-                return result;
+            var movieCollectionModel = new MovieCollectionModel
+            {
+                MoviesModel = new List<MovieModel>()
+            };
+
+            if (firstSourceTask?.Result != null && secondSourceTask?.Result != null)
+            {
+                foreach (var movie in firstSourceTask?.Result.Movies)
+                    AddMovieToCollection(movieCollectionModel, movie, Source.FilmWorld);
+
+                foreach (var movie in secondSourceTask.Result.Movies)
+                {
+                    if (movieCollectionModel.MoviesModel.Count(x => x.Title == movie.Title) < 1)
+                        AddMovieToCollection(movieCollectionModel, movie, Source.CinemaWorld);
+                }
+
+                return movieCollectionModel;
+            }            
 
             throw new Exception("Unable to fetch data.");
         }
 
-        public async Task<MovieDetails> GetMovieById(string id)
+        private static void AddMovieToCollection(MovieCollectionModel movieCollectionModel, Movie movie, Source source)
+        {
+            movieCollectionModel.MoviesModel.Add(new MovieModel
+            {
+                ID = movie.ID,
+                Poster = movie.Poster,
+                Source = source,
+                Title = movie.Title,
+                Type = movie.Type,
+                Year = movie.Year
+            });
+        }
+
+        public async Task<MovieCollection> GetAllMoviesBySource(Source source)
+        {
+            var sourceUrl = string.Empty;
+
+            if (source == Source.CinemaWorld)
+                sourceUrl = $"api/cinemaworld/movies";
+            else if (source == Source.FilmWorld)
+                sourceUrl = $"api/filmworld/movies";
+
+            var allMovieResult = await RetryLogic<MovieCollection>(sourceUrl);
+
+            if (allMovieResult != null)
+                return allMovieResult;
+
+            throw new Exception("Unable to fetch data.");
+        }
+
+        public async Task<MovieDetailResult> GetMovieById(string id, Source source)
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new Exception("ID not passed");
 
-            var url = $"api/filmworld/movie/{id}";
+            var firstSourceUrl = string.Empty;
+            var secondSourceUrl = string.Empty;
+            var secondSource = source;
 
-            var result = await RetryLogic<MovieDetails>(url);
+            UpdateSourceUrl(id, source, ref firstSourceUrl, ref secondSourceUrl, ref secondSource);
 
-            if (result != null)
-                return result;
+            var firstSourceTask = RetryLogic<MovieDetails>(firstSourceUrl);
+            var secondSourceTask = GetAllMoviesBySource(secondSource);
 
-            throw new Exception("No data found");
+            await Task.WhenAll(firstSourceTask, secondSourceTask);
+
+            if (firstSourceTask.Result != null && secondSourceTask.Result != null)
+                return await GetMovieData(firstSourceTask, secondSourceTask, secondSourceUrl);
+
+            throw new Exception("Error retrieving data");
+        }
+
+        private static void UpdateSourceUrl(string id, Source source, ref string firstSourceUrl, ref string secondSourceUrl, ref Source secondSource)
+        {
+            if (source == Source.CinemaWorld)
+            {
+                firstSourceUrl = Constants.CinemaWorldUrlById + id;
+                secondSourceUrl = Constants.FilmWorldUrlById;
+                secondSource = Source.FilmWorld;
+            }
+            else if (source == Source.FilmWorld)
+            {
+                firstSourceUrl = Constants.FilmWorldUrlById + id;
+                secondSourceUrl = Constants.CinemaWorldUrlById;
+                secondSource = Source.CinemaWorld;
+            }
         }
 
         /// <summary>
@@ -71,7 +144,7 @@ namespace MovieMagic.Service
                     exceptionList.Add(ex);
                     ++attemptCount;
 
-                    await Task.Delay(TimeSpan.FromSeconds(3));
+                    await Task.Delay(TimeSpan.FromSeconds(1));
                     Log.Error(ex.Message);
                 }
 
@@ -94,14 +167,41 @@ namespace MovieMagic.Service
 
             if (string.IsNullOrWhiteSpace(result))
             {
-                if(response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
                     throw new Exception("No records exist.");
 
-                if(response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                     throw new Exception("Service Unavailable");
             }
 
             return JsonConvert.DeserializeObject<T>(result);
+        }
+
+        private async Task<MovieDetailResult> GetMovieData(Task<MovieDetails> firstSourceTask, Task<MovieCollection> secondSourceTask, string secondSourceUrl)
+        {
+            var secondSourceMovie = secondSourceTask.Result.Movies.Where(x => x.Title == firstSourceTask.Result.Title);
+            var movieDetailResult = new MovieDetailResult();
+
+            if (secondSourceMovie != null && secondSourceMovie.Any())
+            {
+                var secondSourceByIdUrl = secondSourceUrl + secondSourceMovie.FirstOrDefault().ID;
+                var secondSourceResult = await RetryLogic<MovieDetails>(secondSourceByIdUrl);
+
+                if (secondSourceResult != null)
+                {
+                    movieDetailResult.CinemaWorldPrice = secondSourceResult.Price;
+                    movieDetailResult.FilmWorldPrice = firstSourceTask.Result.Price;
+                    movieDetailResult.MovieDetails = firstSourceTask.Result;
+                }
+            }
+            else
+            {
+                movieDetailResult.CinemaWorldPrice = string.Empty;
+                movieDetailResult.FilmWorldPrice = firstSourceTask.Result.Price;
+                movieDetailResult.MovieDetails = firstSourceTask.Result;
+            }
+
+            return movieDetailResult;
         }
     }
 }

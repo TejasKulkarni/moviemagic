@@ -20,7 +20,7 @@ const MovieList = () => {
                     <div className="cards_wrap">
                         {
                             movieList && movieList.map((movie) => (
-                                <Link to={`/movie/${movie.id}`} key={movie.id} style={{textDecoration: 'none'}}>
+                                <Link to={`/movie/${movie.source}/${movie.id}`} key={movie.id} style={{textDecoration: 'none'}}>
                                     <Card poster={movie.poster}
                                         title={movie.title} type={movie.type} year={movie.year} />
                                 </Link>

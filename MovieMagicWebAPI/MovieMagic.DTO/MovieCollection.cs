@@ -1,6 +1,5 @@
-﻿using System;
+﻿using MovieMagic.Common.Enums;
 using System.Collections.Generic;
-using System.Text;
 
 namespace MovieMagic.DTO
 {

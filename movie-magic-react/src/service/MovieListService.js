@@ -5,7 +5,7 @@ export function getMovieList(onSuccess, onFailure) {
     getData(config, `http://localhost:5000/api/Movie/AllMovies`, onSuccess, onFailure);
 }
 
-export function getMovieDetailsById(payload, onSuccess, onFailure) {
+export function getMovieDetailsById(id, source, onSuccess, onFailure) {
     const config = { "content-type": "application/json" };
-    getData(config, `http://localhost:5000/api/Movie/movie/${payload}`, onSuccess, onFailure);
+    getData(config, `http://localhost:5000/api/Movie/movie?id=${id}&source=${source}`, onSuccess, onFailure);
 }

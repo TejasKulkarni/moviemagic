@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MovieMagic.Common.Enums;
 using MovieMagic.Service;
 using System.Threading.Tasks;
 
@@ -30,12 +31,12 @@ namespace MovieMagic.WebAPI.Controllers
         }
 
         // GET api/<MovieController>/5
-        [HttpGet("movie/{id}")]
+        [HttpGet("movie/")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Get(string id)
+        public async Task<IActionResult> Get(string id, int source)
         {
-            var result = await _service.GetMovieById(id);
+            var result = await _service.GetMovieById(id, (Source)source);
             return Ok(result);
         }
     }

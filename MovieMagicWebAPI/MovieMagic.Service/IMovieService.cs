@@ -1,12 +1,15 @@
-﻿using MovieMagic.DTO;
+﻿using MovieMagic.Common.Enums;
+using MovieMagic.DTO;
 using System.Threading.Tasks;
 
 namespace MovieMagic.Service
 {
     public interface IMovieService
     {
-        Task<MovieCollection> GetAllMovies();
+        Task<MovieCollectionModel> GetAllMovies();
 
-        Task<MovieDetails> GetMovieById(string id);
+        Task<MovieCollection> GetAllMoviesBySource(Source source);
+
+        Task<MovieDetailResult> GetMovieById(string id, Source source);
     }
 }

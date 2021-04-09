@@ -1,6 +1,9 @@
 import React from 'react'
 
-const Plot = ({ plot }) => {
+const Plot = ({ movieDetails }) => {
+
+    const { plot } = movieDetails;
+
     return (
         <div>
             <h2>Plot</h2>

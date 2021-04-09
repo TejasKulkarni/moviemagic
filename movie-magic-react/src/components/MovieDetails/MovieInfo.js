@@ -1,6 +1,9 @@
 import React from 'react'
 
-const MovieInfo = ({title, year, rating, rated, runtime, genre, released, votes}) => {
+const MovieInfo = ({ movieDetails }) => {
+
+    const { title, year, rating, rated, runtime, genre, released, votes } = movieDetails;
+
     return (
         <>
             <div className="movie-details-links">

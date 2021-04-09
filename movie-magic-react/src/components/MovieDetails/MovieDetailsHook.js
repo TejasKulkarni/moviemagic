@@ -7,12 +7,12 @@ function useMovieDetails() {
     const [error, setError] = useState();
     const [isLoading, setIsLoading] = useState();
 
-    const { id } = useParams();
+    const { id, source } = useParams();
 
     useEffect(() => {
         setIsLoading(true);
-        if (id !== null || id !== "0") {
-            getMovieDetailsById(id, (res) => {
+        if (source !== null && (id !== null || id !== "0")) {
+            getMovieDetailsById(id, source, (res) => {
                 if (res.data !== null && res.data !== "") {
                     const movieDetailsData = res.data;
                     setMovieDetail(movieDetailsData);

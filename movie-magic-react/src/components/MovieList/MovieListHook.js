@@ -9,7 +9,7 @@ function useMovieList() {
     useEffect(() => {
         setIsLoading(true);
         getMovieList((res) => {
-            const movieListData = res.data.movies;
+            const movieListData = res.data.moviesModel;
             setMovieList(movieListData);
             setError(null);
             setIsLoading(false);

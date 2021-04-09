@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MovieMagic.Common.Middlewares;
 using MovieMagic.Service;
+using MovieMagic.WebAPI.Middleware;
 using System;
 
 namespace MovieMagic.WebAPI
